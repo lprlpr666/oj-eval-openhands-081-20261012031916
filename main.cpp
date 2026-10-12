@@ -85,36 +85,29 @@ int main() {
         add_edge(a, b, 1);  // Each pipe has capacity 1
     }
     
+    // Store original edges for reset
+    vector<tuple<int, int, int, int>> edge_info; // from, to, index_in_from, index_in_to
+    for (int i = 1; i <= n; i++) {
+        for (int j = 0; j < graph[i].size(); j++) {
+            Edge &e = graph[i][j];
+            if (i < e.to) { // Store each edge only once
+                edge_info.push_back(make_tuple(i, e.to, j, e.rev));
+            }
+        }
+    }
+    
     // Calculate sum of max flows for all pairs (a,b) where a < b
     long long total_flow = 0;
     for (int a = 1; a <= n; a++) {
         for (int b = a + 1; b <= n; b++) {
-            // Reset graph for each flow calculation
-            for (int i = 1; i <= n; i++) {
-                for (auto &e : graph[i]) {
-                    if (i < e.to) {  // Only reset each edge once
-                        // We need to restore original capacities
-                        // Since we're using symmetric edges, we need to be careful
-                        // Let's rebuild the graph for each pair
-                    }
-                }
-            }
-            // Rebuild graph for this pair
-            // We'll rebuild the entire graph for each pair to ensure clean state
-            vector<pair<int, int>> edges;
-            for (int i = 1; i <= n; i++) {
-                for (auto &e : graph[i]) {
-                    if (i < e.to) {  // Only store each edge once
-                        edges.push_back({i, e.to});
-                    }
-                }
-            }
-            // Clear and rebuild
-            for (int i = 1; i <= n; i++) {
-                graph[i].clear();
-            }
-            for (auto &e : edges) {
-                add_edge(e.first, e.second, 1);
+            // Reset all edge capacities to original values (1)
+            for (auto &edge : edge_info) {
+                int from = get<0>(edge);
+                int to = get<1>(edge);
+                int idx_from = get<2>(edge);
+                int idx_to = get<3>(edge);
+                graph[from][idx_from].cap = 1;
+                graph[to][idx_to].cap = 1;
             }
             
             total_flow += max_flow(a, b);
