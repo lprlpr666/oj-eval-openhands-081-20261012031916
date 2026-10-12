@@ -3,12 +3,14 @@
 #include <queue>
 #include <algorithm>
 #include <cstring>
+#include <set>
 
 using namespace std;
 
 const int MAXN = 3005;
 const int INF = 1e9;
 
+// Data structures for Gomory-Hu tree construction
 struct Edge {
     int to, cap, rev;
     Edge(int t, int c, int r) : to(t), cap(c), rev(r) {}
@@ -78,20 +80,24 @@ int main() {
         graph[i].clear();
     }
     
-    // Read edges
+    // Read edges and store them
+    vector<pair<int, int>> edges;
     for (int i = 0; i < m; i++) {
         int a, b;
         cin >> a >> b;
+        edges.push_back({a, b});
         add_edge(a, b, 1);  // Each pipe has capacity 1
     }
     
-    // Store original edges for reset
-    vector<tuple<int, int, int, int>> edge_info; // from, to, index_in_from, index_in_to
-    for (int i = 1; i <= n; i++) {
-        for (int j = 0; j < graph[i].size(); j++) {
-            Edge &e = graph[i][j];
-            if (i < e.to) { // Store each edge only once
-                edge_info.push_back(make_tuple(i, e.to, j, e.rev));
+    // Store the reverse edge information for capacity reset
+    // For each edge (u,v), we need to reset both directions
+    // We'll store for each edge (u,v) the indices in u's and v's adjacency lists
+    vector<tuple<int, int, int, int>> edge_indices; // u, v, idx_u, idx_v
+    for (int u = 1; u <= n; u++) {
+        for (int i = 0; i < graph[u].size(); i++) {
+            Edge &e = graph[u][i];
+            if (u < e.to) { // Store each edge only once
+                edge_indices.push_back(make_tuple(u, e.to, i, e.rev));
             }
         }
     }
@@ -100,14 +106,14 @@ int main() {
     long long total_flow = 0;
     for (int a = 1; a <= n; a++) {
         for (int b = a + 1; b <= n; b++) {
-            // Reset all edge capacities to original values (1)
-            for (auto &edge : edge_info) {
-                int from = get<0>(edge);
-                int to = get<1>(edge);
-                int idx_from = get<2>(edge);
-                int idx_to = get<3>(edge);
-                graph[from][idx_from].cap = 1;
-                graph[to][idx_to].cap = 1;
+            // Reset all edge capacities to 1
+            for (auto &edge : edge_indices) {
+                int u = get<0>(edge);
+                int v = get<1>(edge);
+                int idx_u = get<2>(edge);
+                int idx_v = get<3>(edge);
+                graph[u][idx_u].cap = 1;
+                graph[v][idx_v].cap = 1;
             }
             
             total_flow += max_flow(a, b);
